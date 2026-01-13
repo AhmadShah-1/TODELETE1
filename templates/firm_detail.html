@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ firm.name }} - Mini CRM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+        <div>
+            <h2>{{ firm.name }}</h2>
+            {% if firm.industry %}<p style="color: #7f8c8d;">{{ firm.industry }}</p>{% endif %}
+        </div>
+        <a href="{{ url_for('firm_edit', firm_id=firm.id) }}" class="btn">Edit Firm</a>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        {% if firm.website %}
+        <div>
+            <strong>Website:</strong><br>
+            <a href="{{ firm.website }}" target="_blank">{{ firm.website }}</a>
+        </div>
+        {% endif %}
+        
+        {% if firm.phone %}
+        <div>
+            <strong>Phone:</strong><br>
+            {{ firm.phone }}
+        </div>
+        {% endif %}
+        
+        {% if firm.address %}
+        <div>
+            <strong>Address:</strong><br>
+            {{ firm.address }}
+        </div>
+        {% endif %}
+        
+        <div>
+            <strong>Created:</strong><br>
+            {{ firm.created_at|datetime_format('%Y-%m-%d') }}
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+        <a href="{{ url_for('contact_add', firm_id=firm.id) }}" class="btn btn-success btn-small">+ Add Contact</a>
+        <a href="{{ url_for('project_add', firm_id=firm.id) }}" class="btn btn-success btn-small">+ Add Project</a>
+    </div>
+</div>
+
+<!-- Contacts -->
+<div class="card">
+    <h3>Contacts ({{ firm.contacts|length }})</h3>
+    
+    {% if firm.contacts %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Email</th>
+                <th>Phone</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for contact in firm.contacts %}
+            <tr>
+                <td><a href="{{ url_for('contact_detail', contact_id=contact.id) }}">{{ contact.full_name }}</a></td>
+                <td>{{ contact.position or '-' }}</td>
+                <td>{{ contact.email or '-' }}</td>
+                <td>{{ contact.phone or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #7f8c8d;">No contacts yet. <a href="{{ url_for('contact_add', firm_id=firm.id) }}">Add a contact</a></p>
+    {% endif %}
+</div>
+
+<!-- Projects -->
+<div class="card">
+    <h3>Projects ({{ firm.projects|length }})</h3>
+    
+    {% if firm.projects %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Contacts</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in firm.projects %}
+            <tr>
+                <td><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></td>
+                <td><span class="badge badge-{{ project.status.lower().replace(' ', '') }}">{{ project.status }}</span></td>
+                <td>{{ project.contacts|length }}</td>
+                <td>{{ project.start_date|date_format if project.start_date else '-' }}</td>
+                <td>{{ project.end_date|date_format if project.end_date else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #7f8c8d;">No projects yet. <a href="{{ url_for('project_add', firm_id=firm.id) }}">Add a project</a></p>
+    {% endif %}
+</div>
+
+<!-- Notes -->
+<div class="card">
+    <h3>Notes ({{ notes|length }})</h3>
+    
+    <form method="POST" action="{{ url_for('note_add') }}" class="note-form">
+        <input type="hidden" name="entity_type" value="firm">
+        <input type="hidden" name="entity_id" value="{{ firm.id }}">
+        <div class="form-group">
+            <label for="content">Add a note</label>
+            <textarea id="content" name="content" placeholder="Enter your note here..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-small">Add Note</button>
+    </form>
+    
+    {% if notes %}
+    <div class="notes-list">
+        {% for note in notes %}
+        <div class="note-item">
+            <div class="note-header">
+                <span class="note-author">{{ note.author.username }}</span>
+                <span class="note-time">{{ note.created_at|datetime_format }}</span>
+            </div>
+            <div class="note-content">{{ note.content }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
