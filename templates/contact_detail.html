@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ contact.full_name }} - Mini CRM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+        <div>
+            <h2>{{ contact.full_name }}</h2>
+            <p style="color: #7f8c8d;">
+                {{ contact.position or 'No position' }} at <a href="{{ url_for('firm_detail', firm_id=contact.firm.id) }}">{{ contact.firm.name }}</a>
+            </p>
+        </div>
+        <a href="{{ url_for('contact_edit', contact_id=contact.id) }}" class="btn">Edit Contact</a>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        {% if contact.email %}
+        <div>
+            <strong>Email:</strong><br>
+            <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+        </div>
+        {% endif %}
+        
+        {% if contact.phone %}
+        <div>
+            <strong>Phone:</strong><br>
+            {{ contact.phone }}
+        </div>
+        {% endif %}
+        
+        <div>
+            <strong>Created:</strong><br>
+            {{ contact.created_at|datetime_format('%Y-%m-%d') }}
+        </div>
+    </div>
+</div>
+
+<!-- Projects -->
+<div class="card">
+    <h3>Projects ({{ contact.projects|length }})</h3>
+    
+    {% if contact.projects %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Firm</th>
+                <th>Status</th>
+                <th>Start Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in contact.projects %}
+            <tr>
+                <td><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></td>
+                <td><a href="{{ url_for('firm_detail', firm_id=project.firm.id) }}">{{ project.firm.name }}</a></td>
+                <td><span class="badge badge-{{ project.status.lower().replace(' ', '') }}">{{ project.status }}</span></td>
+                <td>{{ project.start_date|date_format if project.start_date else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #7f8c8d;">Not associated with any projects yet.</p>
+    {% endif %}
+</div>
+
+<!-- Notes -->
+<div class="card">
+    <h3>Notes ({{ notes|length }})</h3>
+    
+    <form method="POST" action="{{ url_for('note_add') }}" class="note-form">
+        <input type="hidden" name="entity_type" value="contact">
+        <input type="hidden" name="entity_id" value="{{ contact.id }}">
+        <div class="form-group">
+            <label for="content">Add a note</label>
+            <textarea id="content" name="content" placeholder="Enter your note here..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-small">Add Note</button>
+    </form>
+    
+    {% if notes %}
+    <div class="notes-list">
+        {% for note in notes %}
+        <div class="note-item">
+            <div class="note-header">
+                <span class="note-author">{{ note.author.username }}</span>
+                <span class="note-time">{{ note.created_at|datetime_format }}</span>
+            </div>
+            <div class="note-content">{{ note.content }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

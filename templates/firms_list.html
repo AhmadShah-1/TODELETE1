@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}All Firms - Mini CRM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>All Firms</h2>
+        <a href="{{ url_for('firm_add') }}" class="btn btn-success">+ Add New Firm</a>
+    </div>
+    
+    {% if firms %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Industry</th>
+                <th>Contacts</th>
+                <th>Projects</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for firm in firms %}
+            <tr>
+                <td><a href="{{ url_for('firm_detail', firm_id=firm.id) }}">{{ firm.name }}</a></td>
+                <td>{{ firm.industry or '-' }}</td>
+                <td>{{ firm.contacts|length }}</td>
+                <td>{{ firm.projects|length }}</td>
+                <td>{{ firm.created_at|datetime_format('%Y-%m-%d') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #7f8c8d;">No firms found. <a href="{{ url_for('firm_add') }}">Add your first firm</a></p>
+    {% endif %}
+</div>
+{% endblock %}

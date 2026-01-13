@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}{% if project %}Edit {{ project.name }}{% else %}Add New Project{% endif %} - Mini CRM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{% if project %}Edit Project{% else %}Add New Project{% endif %}</h2>
+    <p style="color: #7f8c8d; margin-bottom: 1rem;">Firm: <a href="{{ url_for('firm_detail', firm_id=firm.id) }}">{{ firm.name }}</a></p>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="name">Project Name *</label>
+            <input type="text" id="name" name="name" required value="{{ project.name if project else '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description">{{ project.description if project else '' }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="Active" {% if project and project.status == 'Active' %}selected{% endif %}>Active</option>
+                <option value="Completed" {% if project and project.status == 'Completed' %}selected{% endif %}>Completed</option>
+                <option value="On Hold" {% if project and project.status == 'On Hold' %}selected{% endif %}>On Hold</option>
+                <option value="Cancelled" {% if project and project.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="start_date">Start Date</label>
+            <input type="date" id="start_date" name="start_date" value="{% if project and project.start_date %}{{ project.start_date|date_format }}{% endif %}">
+        </div>
+        
+        <div class="form-group">
+            <label for="end_date">End Date</label>
+            <input type="date" id="end_date" name="end_date" value="{% if project and project.end_date %}{{ project.end_date|date_format }}{% endif %}">
+        </div>
+        
+        <div class="form-group">
+            <label>Associated Contacts</label>
+            {% if contacts %}
+            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 0.5rem; border-radius: 4px;">
+                {% for contact in contacts %}
+                <div style="margin-bottom: 0.25rem;">
+                    <label style="font-weight: normal; display: flex; align-items: center;">
+                        <input type="checkbox" name="contact_ids" value="{{ contact.id }}" 
+                               {% if project and contact in project.contacts %}checked{% endif %}
+                               style="margin-right: 0.5rem;">
+                        {{ contact.full_name }} - {{ contact.position or 'No position' }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: #7f8c8d;">No contacts available for this firm.</p>
+            {% endif %}
+        </div>
+        
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-success">{% if project %}Update{% else %}Create{% endif %} Project</button>
+            <a href="{% if project %}{{ url_for('project_detail', project_id=project.id) }}{% else %}{{ url_for('firm_detail', firm_id=firm.id) }}{% endif %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

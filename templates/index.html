@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Mini CRM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Welcome to Mini CRM</h2>
+    
+    <!-- Global Search -->
+    <form action="{{ url_for('index') }}" method="get" class="search-box">
+        <input type="text" name="search" placeholder="Search firms, contacts, and projects..." value="{{ search_query }}">
+        <button type="submit" class="btn">Search</button>
+    </form>
+    
+    <!-- Add Firm Action -->
+    <div style="margin-bottom: 1rem;">
+        <a href="{{ url_for('firm_add') }}" class="btn btn-success">+ Add New Firm</a>
+        <a href="{{ url_for('firms_list') }}" class="btn btn-secondary">View All Firms</a>
+    </div>
+</div>
+
+{% if search_query %}
+<div class="card">
+    <h2>Search Results for "{{ search_query }}"</h2>
+    
+    {% if firms %}
+    <div style="margin-bottom: 1.5rem;">
+        <h3>Firms ({{ firms|length }})</h3>
+        {% for firm in firms %}
+        <div class="list-item">
+            <h4><a href="{{ url_for('firm_detail', firm_id=firm.id) }}">{{ firm.name }}</a></h4>
+            <div class="meta">
+                {% if firm.industry %}{{ firm.industry }} | {% endif %}
+                {{ firm.contacts|length }} contacts | {{ firm.projects|length }} projects
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if contacts %}
+    <div style="margin-bottom: 1.5rem;">
+        <h3>Contacts ({{ contacts|length }})</h3>
+        {% for contact in contacts %}
+        <div class="list-item">
+            <h4><a href="{{ url_for('contact_detail', contact_id=contact.id) }}">{{ contact.full_name }}</a></h4>
+            <div class="meta">
+                {{ contact.position or 'No position' }} at <a href="{{ url_for('firm_detail', firm_id=contact.firm.id) }}">{{ contact.firm.name }}</a>
+                {% if contact.email %} | {{ contact.email }}{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if projects %}
+    <div style="margin-bottom: 1.5rem;">
+        <h3>Projects ({{ projects|length }})</h3>
+        {% for project in projects %}
+        <div class="list-item">
+            <h4>
+                <a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a>
+                <span class="badge badge-{{ project.status.lower().replace(' ', '') }}">{{ project.status }}</span>
+            </h4>
+            <div class="meta">
+                Firm: <a href="{{ url_for('firm_detail', firm_id=project.firm.id) }}">{{ project.firm.name }}</a>
+                | {{ project.contacts|length }} contacts
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if not firms and not contacts and not projects %}
+    <p style="color: #7f8c8d;">No results found for "{{ search_query }}"</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Recent Activity Feed with Filters -->
+<div class="card">
+    <h2>Recent Activity</h2>
+    
+    <div class="filter-tabs">
+        <a href="{{ url_for('index', filter='all') }}" class="filter-tab {% if activity_filter == 'all' %}active{% endif %}">All</a>
+        <a href="{{ url_for('index', filter='firms') }}" class="filter-tab {% if activity_filter == 'firms' %}active{% endif %}">Firms</a>
+        <a href="{{ url_for('index', filter='contacts') }}" class="filter-tab {% if activity_filter == 'contacts' %}active{% endif %}">Contacts</a>
+        <a href="{{ url_for('index', filter='projects') }}" class="filter-tab {% if activity_filter == 'projects' %}active{% endif %}">Projects</a>
+    </div>
+    
+    {% if recent_notes %}
+    <div class="notes-list">
+        {% for note in recent_notes %}
+        <div class="note-item">
+            <div class="note-header">
+                <span class="note-author">{{ note.author.username }}</span>
+                <span class="note-time">{{ note.created_at|datetime_format }}</span>
+            </div>
+            <div class="note-content">
+                <strong>{{ note.entity_type }}:</strong>
+                {% if note.firm %}
+                    <a href="{{ url_for('firm_detail', firm_id=note.firm.id) }}">{{ note.firm.name }}</a>
+                {% elif note.contact %}
+                    <a href="{{ url_for('contact_detail', contact_id=note.contact.id) }}">{{ note.contact.full_name }}</a>
+                {% elif note.project %}
+                    <a href="{{ url_for('project_detail', project_id=note.project.id) }}">{{ note.project.name }}</a>
+                {% endif %}
+                <br>
+                {{ note.content }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #7f8c8d;">No recent activity</p>
+    {% endif %}
+</div>
+
+<!-- Recent Firms Quick Access -->
+{% if recent_firms and not search_query %}
+<div class="card">
+    <h2>Recently Added Firms</h2>
+    <div class="grid">
+        {% for firm in recent_firms %}
+        <div class="list-item">
+            <h4><a href="{{ url_for('firm_detail', firm_id=firm.id) }}">{{ firm.name }}</a></h4>
+            <div class="meta">
+                {% if firm.industry %}{{ firm.industry }}<br>{% endif %}
+                {{ firm.contacts|length }} contacts | {{ firm.projects|length }} projects
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
