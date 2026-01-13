@@ -19,6 +19,7 @@ def index():
     activity_filter = request.args.get('filter', 'all')
     
     # Global search across all entities
+    # Note: SQLAlchemy's filter() and ilike() use parameterized queries, preventing SQL injection
     firms = []
     contacts = []
     projects = []
@@ -214,9 +215,12 @@ def project_add(firm_id):
         # Add linked contacts (only from the same firm)
         contact_ids = request.form.getlist('contact_ids')
         for contact_id in contact_ids:
-            contact = Contact.query.filter_by(id=int(contact_id), firm_id=firm_id).first()
-            if contact:
-                project.contacts.append(contact)
+            try:
+                contact = Contact.query.filter_by(id=int(contact_id), firm_id=firm_id).first()
+                if contact:
+                    project.contacts.append(contact)
+            except (ValueError, TypeError):
+                continue  # Skip invalid contact IDs
         
         db.session.add(project)
         db.session.commit()
@@ -260,9 +264,12 @@ def project_edit(project_id):
         project.contacts = []
         contact_ids = request.form.getlist('contact_ids')
         for contact_id in contact_ids:
-            contact = Contact.query.filter_by(id=int(contact_id), firm_id=project.firm_id).first()
-            if contact:
-                project.contacts.append(contact)
+            try:
+                contact = Contact.query.filter_by(id=int(contact_id), firm_id=project.firm_id).first()
+                if contact:
+                    project.contacts.append(contact)
+            except (ValueError, TypeError):
+                continue  # Skip invalid contact IDs
         
         db.session.commit()
         flash(f'Project "{project.name}" updated successfully!', 'success')
@@ -334,4 +341,5 @@ def date_format(value, format='%Y-%m-%d'):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+    # Note: debug=True is for development only. Use a production WSGI server like Gunicorn for production.
     app.run(debug=True)
