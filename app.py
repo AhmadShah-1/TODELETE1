@@ -186,19 +186,35 @@ def project_add(firm_id):
     firm = Firm.query.get_or_404(firm_id)
     
     if request.method == 'POST':
+        # Parse dates safely
+        start_date = None
+        end_date = None
+        if request.form.get('start_date'):
+            try:
+                start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%d').date()
+            except ValueError:
+                flash('Invalid start date format', 'error')
+                return redirect(url_for('project_add', firm_id=firm_id))
+        if request.form.get('end_date'):
+            try:
+                end_date = datetime.strptime(request.form.get('end_date'), '%Y-%m-%d').date()
+            except ValueError:
+                flash('Invalid end date format', 'error')
+                return redirect(url_for('project_add', firm_id=firm_id))
+        
         project = Project(
             name=request.form['name'],
             description=request.form.get('description'),
             status=request.form.get('status', 'Active'),
             firm_id=firm_id,
-            start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date() if request.form.get('start_date') else None,
-            end_date=datetime.strptime(request.form['end_date'], '%Y-%m-%d').date() if request.form.get('end_date') else None
+            start_date=start_date,
+            end_date=end_date
         )
         
-        # Add linked contacts
+        # Add linked contacts (only from the same firm)
         contact_ids = request.form.getlist('contact_ids')
         for contact_id in contact_ids:
-            contact = Contact.query.get(contact_id)
+            contact = Contact.query.filter_by(id=int(contact_id), firm_id=firm_id).first()
             if contact:
                 project.contacts.append(contact)
         
@@ -217,17 +233,34 @@ def project_edit(project_id):
     project = Project.query.get_or_404(project_id)
     
     if request.method == 'POST':
+        # Parse dates safely
+        if request.form.get('start_date'):
+            try:
+                project.start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%d').date()
+            except ValueError:
+                flash('Invalid start date format', 'error')
+                return redirect(url_for('project_edit', project_id=project_id))
+        else:
+            project.start_date = None
+            
+        if request.form.get('end_date'):
+            try:
+                project.end_date = datetime.strptime(request.form.get('end_date'), '%Y-%m-%d').date()
+            except ValueError:
+                flash('Invalid end date format', 'error')
+                return redirect(url_for('project_edit', project_id=project_id))
+        else:
+            project.end_date = None
+        
         project.name = request.form['name']
         project.description = request.form.get('description')
         project.status = request.form.get('status', 'Active')
-        project.start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d').date() if request.form.get('start_date') else None
-        project.end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d').date() if request.form.get('end_date') else None
         
-        # Update linked contacts
+        # Update linked contacts (only from the same firm)
         project.contacts = []
         contact_ids = request.form.getlist('contact_ids')
         for contact_id in contact_ids:
-            contact = Contact.query.get(contact_id)
+            contact = Contact.query.filter_by(id=int(contact_id), firm_id=project.firm_id).first()
             if contact:
                 project.contacts.append(contact)
         
@@ -248,6 +281,16 @@ def note_add():
     
     if not content:
         flash('Note content is required', 'error')
+        return redirect(request.referrer)
+    
+    if not entity_id:
+        flash('Invalid entity ID', 'error')
+        return redirect(request.referrer)
+    
+    try:
+        entity_id = int(entity_id)
+    except (ValueError, TypeError):
+        flash('Invalid entity ID format', 'error')
         return redirect(request.referrer)
     
     # Get or create a default user (in a real app, this would be the logged-in user)
